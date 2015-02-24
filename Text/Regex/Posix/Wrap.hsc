@@ -101,8 +101,6 @@ module Text.Regex.Posix.Wrap(
 #include <sys/types.h>
 -- string.h is needed for memset
 
-#include "myfree.h"
-         
 #include "string.h"
 
 #ifndef _POSIX_C_SOURCE
@@ -130,7 +128,7 @@ import Data.Word(Word32,Word64) -- need whatever RegeOffset or #regoff_t type wi
 import Foreign(Ptr, FunPtr, nullPtr, newForeignPtr,
                addForeignPtrFinalizer, Storable(peekByteOff), allocaArray,
                allocaBytes, withForeignPtr,ForeignPtr,plusPtr,peekElemOff)
-import Foreign.Marshal.Alloc(mallocBytes)
+import Foreign.Marshal.Alloc(finalizerFree, mallocBytes)
 import Foreign.C(CChar)
 #if __GLASGOW_HASKELL__ >= 703
 import Foreign.C(CSize(CSize),CInt(CInt))
@@ -349,19 +347,13 @@ type CRegMatch = () -- dummy regmatch_t used below to read out so and eo values
 foreign import ccall unsafe "memset"
   c_memset :: Ptr CRegex -> CInt -> CSize -> IO (Ptr CRegex)
 
--- c-finalizer/myfree.h and c-finalizer/myfree.c
-foreign import ccall unsafe "&myregfree"
-  c_myregfree :: FunPtr (Ptr CRegex -> IO ())
-
 #if __GLASGOW_HASKELL__ || __HUGS__
 
 foreign import ccall unsafe "regcomp"
   c_regcomp :: Ptr CRegex -> CString -> CompOption -> IO ReturnCode
 
-{- NOT USED
 foreign import ccall unsafe "&regfree"
   c_regfree :: FunPtr (Ptr CRegex -> IO ())
--}
 
 foreign import ccall unsafe "regexec"
   c_regexec :: Ptr CRegex -> CString -> CSize
@@ -476,7 +468,10 @@ wrapCompile flags e pattern = do
     Left ioerror -> return (Left (retOk,"Text.Regex.Posix.Wrap.wrapCompile: IOError from mallocBytes(regex_t) : "++show ioerror))
     Right raw_regex_ptr -> do
       zero_regex_ptr <- c_memset raw_regex_ptr 0 (#const sizeof(regex_t)) -- no calloc, so clear the new area to zero
-      regex_fptr <- newForeignPtr c_myregfree zero_regex_ptr -- once pointed-to area is clear it should be safe to add finalizer
+      regex_fptr <- newForeignPtr finalizerFree zero_regex_ptr
+      -- once pointed-to area is clear it should be safe to add finalizer.
+      -- c_regfree will run _before_ finalizerFree as intended.
+      addForeignPtrFinalizer c_regfree regex_fptr
       withForeignPtr regex_fptr $ \regex_ptr -> do  -- withForeignPtr is best hygiene here
         errCode <- c_regcomp regex_ptr pattern flags
         if (errCode == retOk)
