@@ -76,7 +76,7 @@ unwrap x = case x of Left err -> fail ("Text.Regex.Posix.ByteString died: "++ sh
 instance RegexMaker Regex CompOption ExecOption ByteString where
   makeRegexOpts c e pattern = unsafePerformIO $
     compile c e pattern >>= unwrap
-  makeRegexOptsM c e pattern = either (fail.show) return $ unsafePerformIO $
+  makeRegexOptsM c e pattern = either (error.show) return $ unsafePerformIO $
     compile c e pattern
 
 instance RegexLike Regex ByteString where

@@ -89,7 +89,7 @@ asCString s = if (not (L.null s)) && (0==L.last s)
 
 instance RegexMaker Regex CompOption ExecOption L.ByteString where
   makeRegexOpts c e pattern = unsafePerformIO $ compile c e pattern >>= unwrap
-  makeRegexOptsM c e pattern = either (fail.show) return $ unsafePerformIO $ compile c e pattern
+  makeRegexOptsM c e pattern = either (error.show) return $ unsafePerformIO $ compile c e pattern
 
 instance RegexLike Regex L.ByteString where
   matchTest regex bs = unsafePerformIO $

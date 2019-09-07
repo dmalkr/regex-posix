@@ -120,6 +120,7 @@ module Text.Regex.Posix.Wrap(
 {-# CFILES cbits/regfree.c #-}
 #endif
 
+import Control.Monad.Fail
 import Control.Monad(liftM)
 import Data.Array(Array,listArray)
 import Data.Bits(Bits(..))
@@ -317,7 +318,7 @@ wrapCount :: Regex -> CString
 
 (=~)  :: (RegexMaker Regex CompOption ExecOption source,RegexContext Regex source1 target)
       => source1 -> source -> target
-(=~~) :: (RegexMaker Regex CompOption ExecOption source,RegexContext Regex source1 target,Monad m)
+(=~~) :: (RegexMaker Regex CompOption ExecOption source,RegexContext Regex source1 target,Monad m,MonadFail m)
       => source1 -> source -> m target
 
 instance RegexOptions Regex CompOption ExecOption where

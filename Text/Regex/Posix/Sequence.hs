@@ -74,7 +74,7 @@ unwrap x = case x of Left err -> fail ("Text.Regex.Posix.Sequence died: "++ show
 instance RegexMaker Regex CompOption ExecOption (Seq Char) where
   makeRegexOpts c e pattern = unsafePerformIO $
     (compile c e pattern >>= unwrap)
-  makeRegexOptsM c e pattern = either (fail.show) return $ unsafePerformIO $ 
+  makeRegexOptsM c e pattern = either (error.show) return $ unsafePerformIO $ 
     (compile c e pattern)
 
 instance RegexLike Regex (Seq Char) where

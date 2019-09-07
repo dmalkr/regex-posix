@@ -70,7 +70,7 @@ unwrap x = case x of Left err -> fail ("Text.Regex.Posix.String died: "++ show e
 instance RegexMaker Regex CompOption ExecOption String where
   makeRegexOpts c e pattern = unsafePerformIO $
     (compile c e pattern >>= unwrap)
-  makeRegexOptsM c e pattern = either (fail.show) return $ unsafePerformIO $ 
+  makeRegexOptsM c e pattern = either (error.show) return $ unsafePerformIO $ 
     (compile c e pattern)
 
 instance RegexLike Regex String where
